@@ -1,29 +1,31 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
-  </div>
+    <div id="app">
+        <h2>Flow Editor</h2>
+        <div id="rete"/>
+    </div>
 </template>
 
-<script lang="ts">
-import Vue from 'vue';
-import HelloWorld from './components/HelloWorld.vue';
+<script>
+import { createFlowEditor } from "./editor";
+import "./flow.css";
 
-export default Vue.extend({
-  name: 'App',
-  components: {
-    HelloWorld
-  }
-});
+export default {
+    mounted() {
+        createFlowEditor();
+    }
+};
 </script>
 
 <style>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+    width: 95%;
+    height: 600px;
+}
+
+#rete {
+    margin: 0 auto;
+    width: 99%;
+    height: 100%;
+    border: 1px solid #333;
 }
 </style>
