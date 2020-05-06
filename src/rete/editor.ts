@@ -38,12 +38,13 @@ export function nodesBBox(editor: NodeEditor, nodes: Node[], margin: number) {
 }
 
 class NodeGroup {
+    dragStart = [0, 0];
     constructor(private editor: NodeEditor, public name: string, public nodes: Node[] = [], public minimized = false) {
         const groupElement = document.createElement('div');
                 groupElement.id = `group-${name}`;
                 groupElement.style.position = 'absolute';
                 groupElement.style.zIndex = '-1';
-                (groupElement as any).dragHandler = new Drag(groupElement, this.onTranslate);
+                (groupElement as any).dragHandler = new Drag(groupElement, this.onTranslate, this.onStart);
                 const groupMinimizeElement = document.createElement('div');
                 groupMinimizeElement.id = `group-${name}-min`;
                 groupMinimizeElement.style.position = 'absolute';
@@ -57,6 +58,7 @@ class NodeGroup {
                 this.editor.view.container.children[0].appendChild(groupElement)
                 groupElement.appendChild(groupMinimizeElement)
      }
+     
      toggleMinimize() {
         this.minimized = !this.minimized;
         this.updateNodesVisibility();
@@ -98,17 +100,20 @@ class NodeGroup {
         
     }
 
+    
+    onStart = (_e: PointerEvent) => {
+        this.dragStart =[0, 0];
+    }
+    
     onTranslate = (x: number, y: number, e: PointerEvent) => {
-        console.log("onGroupTranslate", x, y, e);
+        const dx = x-this.dragStart[0];
+        const dy = y-this.dragStart[1];
+        this.dragStart =[x, y];
         this.nodes.map(n => this.editor.view.nodes.get(n)!).forEach(v => {
-            // v.node.position[0] = x * this.view.area.transform.k + v._startPosition[0];
-            // v.node.position[1] = y * this.view.area.transform.k + v._startPosition[1];
-            // v.update();
-            v.translate(v.node.position[0] + 0.1*x * this.editor.view.area.transform.k, v.node.position[1]+ 0.1*y * this.editor.view.area.transform.k)
+            v.translate(v.node.position[0] + dx * this.editor.view.area.transform.k, v.node.position[1]+ dy * this.editor.view.area.transform.k)
         });
         this.update();
     }
-
 }
 
 export class NodeEditor extends Context<EventsTypes> {
@@ -290,4 +295,4 @@ export class NodeEditor extends Context<EventsTypes> {
 
         return this.afterImport();
     }
-}
+} 
