@@ -19,7 +19,7 @@ export class ConnectionView extends Emitter<EventsTypes> {
         this.el = document.createElement('div');
         this.el.style.position = 'absolute';
         this.el.style.zIndex = '-1';
-
+        this.el.id = `connection-${connection.input.node!.id}-${connection.input.key}-${connection.output.node!.id}-${connection.output.key}`
         this.trigger('renderconnection', { 
             el: this.el, 
             connection: this.connection, 

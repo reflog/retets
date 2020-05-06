@@ -16,7 +16,7 @@ export class NodeView extends Emitter<EventsTypes> {
     controls = new Map<Control, ControlView>();
 
     el: HTMLElement;
-    private _startPosition: number[] = [];
+    _startPosition: number[] = [];
     private _drag: Drag;
 
     constructor(node: Node, component: Component, emitter: Emitter<EventsTypes>) {
@@ -42,6 +42,12 @@ export class NodeView extends Emitter<EventsTypes> {
         });
 
         this.update();
+    }
+
+    setCustomClass(className: "regularGrouped" | "sideGrouped" | "") {
+        this.el.children[0].classList.remove("regularGrouped", "sideGrouped");
+        if(className !== "")
+        this.el.children[0].classList.add(className);
     }
 
     clearSockets() {

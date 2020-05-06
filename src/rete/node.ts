@@ -5,7 +5,6 @@ import { Output } from './output';
 import { InputsData, NodeData, OutputsData } from './core/data';
 
 export class Node {
-
     name: string;
     id: number;
     position: [number, number] = [0.0, 0.0];

@@ -5,6 +5,8 @@ import CommentPlugin from "./comment"
 import AreaPlugin from "rete-area-plugin";
 import HistoryPlugin from "rete-history-plugin";
 import {g} from "./plugin/groupComponents.js";
+import ConnectionPlugin from './connection';
+ 
 
 let numSocket = new Socket("Number Value");
 
@@ -47,7 +49,7 @@ export async function createFlowEditor() {
 
     let editor = new NodeEditor("demo@0.1.0", container);
     window.editor = editor;
-    // editor.use(ConnectionPlugin);
+    editor.use(ConnectionPlugin);
     editor.use(VueRenderPlugin);
     editor.use(AreaPlugin);
     editor.use(CommentPlugin);
@@ -82,10 +84,17 @@ export async function createFlowEditor() {
     editor.on("multiselectnode", (args) => args.accumulate = args.e.ctrlKey || args.e.metaKey);
 
     for (let i = 0; i < 10; i++) {
-        let add = await c.createNode({"group": i % 2 === 0 ? "group1" : null});
+        let add = await c.createNode({"group": i > 0 && i < 5? "group1" : null});
         if (add) {
-            add.position = [Math.random() * 500, Math.random() * 240];
+            add.position = [i * 150, 240];
+            if (i > 0 && i < 5) {
+                add.position[1] += 190;
+            }
             editor.addNode(add);
+        }
+        if (i > 0) {
+            editor.connect(editor.nodes[i-1].outputs.get("num"), editor.nodes[i].inputs.get("num1"))
+
         }
         // if (i % 2 === 0) {
         //     let add = await g.createNode({"group": i % 2 === 0 ? "group1" : null});
@@ -93,8 +102,6 @@ export async function createFlowEditor() {
         //     editor.addNode(add);
         // }
     }
-
-
     editor.view.resize();
     AreaPlugin.zoomAt(editor);
     editor.trigger("process");

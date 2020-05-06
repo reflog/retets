@@ -37,8 +37,13 @@ export function nodesBBox(editor: NodeEditor, nodes: Node[], margin: number) {
     };
 }
 
+class NodeGroup {
+    nodes: Node[] = [];
+    minimized = false;
+}
+
 export class NodeEditor extends Context<EventsTypes> {
-    groups: { [key: string]: Array<Node> } = {};
+    groups: { [key: string]: NodeGroup } = {};
     nodes: Node[] = [];
     selected = new Selected();
     view: EditorView;
@@ -65,10 +70,11 @@ export class NodeEditor extends Context<EventsTypes> {
     }
     onGroupTranslate = (group: string, x: number, y: number, e: PointerEvent) => {
         console.log("onGroupTranslate", x, y, e);
-        this.groups[group].map(n => this.view.nodes.get(n)!).forEach(v => {
-            v.node.position[0] += x / this.view.area.transform.k;
-            v.node.position[1] += y/ this.view.area.transform.k;
-            v.update();
+        this.groups[group].nodes.map(n => this.view.nodes.get(n)!).forEach(v => {
+            // v.node.position[0] = x * this.view.area.transform.k + v._startPosition[0];
+            // v.node.position[1] = y * this.view.area.transform.k + v._startPosition[1];
+            // v.update();
+            v.translate(v.node.position[0] + 0.1*x * this.view.area.transform.k, v.node.position[1]+ 0.1*y * this.view.area.transform.k)
         });
         this.updateGroup(group);
     }
@@ -82,7 +88,7 @@ export class NodeEditor extends Context<EventsTypes> {
         if (node.data.group) {
             const group = (node.data.group as string);
             if (!this.groups[group]) {        
-                this.groups[group] = [];
+                this.groups[group] = new NodeGroup();
                 const groupElement = document.createElement('div');
                 groupElement.id = `group-${group}`;
                 groupElement.style.position = 'absolute';
@@ -101,13 +107,14 @@ export class NodeEditor extends Context<EventsTypes> {
                 this.view.container.children[0].appendChild(groupElement)
                 groupElement.appendChild(groupMinimizeElement)
             }
-            this.groups[group].push(node);
+            this.groups[group].nodes.push(node);
             this.updateGroup(group);
         }
     }
 
     minimizeGroup(group: string) {
-        this.groups[group].map(n => this.view.nodes.get(n)!.el).forEach(el => {
+        this.groups[group].minimized = !this.groups[group].minimized;
+        this.groups[group].nodes.map(n => this.view.nodes.get(n)!.el).forEach(el => {
             if(el.style.display === 'none')
                 el.style.display = 'block';
             else
@@ -117,8 +124,25 @@ export class NodeEditor extends Context<EventsTypes> {
     }
     
     updateGroup(group: string) {
+        if (this.groups[group].nodes.length > 0) {
+            const g = this.groups[group];
+            for (let index = 0; index < g.nodes.length; index++) {
+                const element = g.nodes[index];
+                const firstOrLast = index === 0 || index === g.nodes.length - 1;
+                if (this.groups[group].minimized)
+                    this.view.nodes.get(element)!.setCustomClass(firstOrLast ? "sideGrouped" : "regularGrouped");
+                else
+                    this.view.nodes.get(element)!.setCustomClass("");
+                if (!(firstOrLast)) {
+                    element.getConnections().forEach(con => {
+                        this.view.connections.get(con)!.el.style.display = g.minimized ? "none" : "block";
+                    })    
+                }
+            }            
+        }
+
         const el = document.getElementById(`group-${group}`);
-        const bbox = nodesBBox(this, this.groups[group], 10);
+        const bbox = nodesBBox(this, this.groups[group].nodes, 10);
         const x = bbox.left;
         const y = bbox.top;
         const scale = 1.0;
