@@ -1,6 +1,7 @@
 <template>
     <div id="app">
         <h2>Flow Editor</h2>
+        <button @click="btnClick">remove second node in group</button>
         <div id="rete"/>
     </div>
 </template>
@@ -12,6 +13,11 @@ import "./flow.css";
 export default {
     mounted() {
         createFlowEditor();
+    },
+    methods: {
+        btnClick: function(){
+            window.editor.removeNodeFromGroup(window.editor.nodes[3]);
+        }
     }
 };
 </script>

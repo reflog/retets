@@ -1,6 +1,6 @@
 <template lang="pug">
 .node(:class="[selected(), node.name] | kebab" v-if='visible')
-  .title {{node.name}}
+  .title {{node.title || node.name}}
 
   // Outputs
   .output(v-for='output in outputs()' :key="output.key")

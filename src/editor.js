@@ -32,8 +32,7 @@ class MathComponent extends Component {
 
 class AddComponent extends MathComponent {
     constructor() {
-        super();
-        this.name="Grp:"+this.data.group
+        super("add");
     }
 
     doOperation(v1, v2) {
@@ -84,8 +83,9 @@ export async function createFlowEditor() {
     editor.on("multiselectnode", (args) => args.accumulate = args.e.ctrlKey || args.e.metaKey);
 
     for (let i = 0; i < 10; i++) {
-        let add = await c.createNode({"group": i > 0 && i < 5? "group1" : null});
+        let add = await c.createNode({ "group": i > 0 && i < 5 ? "group1" : null });
         if (add) {
+            add.title = "n:" + i;
             add.position = [i * 150, 240];
             if (i > 0 && i < 5) {
                 add.position[1] += 190;

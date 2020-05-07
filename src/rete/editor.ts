@@ -48,7 +48,7 @@ export function nodesBBox(editor: NodeEditor, nodes: Node[], margin: number): Re
 }
 
 
-export function containsRect(r1:Rect, r2:Rect) {
+export function containsRect(r1: Rect, r2: Rect) {
     return (
         r2.left > r1.left &&
         r2.right < r1.right &&
@@ -60,12 +60,15 @@ export function containsRect(r1:Rect, r2:Rect) {
 class NodeGroup {
     dragStart = [0, 0];
     el: HTMLElement;
+    x = 0;
+    y = 0;
+    dragging = false;
     constructor(private editor: NodeEditor, public name: string, public nodes: Node[] = [], public minimized = false) {
         const groupElement = document.createElement('div');
         groupElement.id = `group-${name}`;
         groupElement.style.position = 'absolute';
         groupElement.style.zIndex = '-1';
-        (groupElement as any).dragHandler = new Drag(groupElement, this.onTranslate, this.onStart);
+        (groupElement as any).dragHandler = new Drag(groupElement, this.onTranslate, this.onStart, this.onDrag);
         const groupMinimizeElement = document.createElement('div');
         groupMinimizeElement.id = `group-${name}-min`;
         groupMinimizeElement.style.position = 'absolute';
@@ -82,66 +85,74 @@ class NodeGroup {
     toggleMinimize = () => {
         this.minimized = !this.minimized;
         this.updateNodesVisibility();
+        this.editor.trigger('process');
+    }
+
+    removeNode(n: Node) {
+        this.nodes.splice(this.nodes.indexOf(n), 1);
+        delete n.data.group;
+        this.update();
     }
 
     canTranslateNode(node: Node, x: number, y: number): boolean {
+        if (this.dragging) return true;
         const el = (this.editor.view.nodes.get(node)!).el;
-        const nodeRect = el.getBoundingClientRect();
-        const groupRect = this.el.getBoundingClientRect();
-        console.log({
-            gt: groupRect.top, gb: groupRect.bottom, gl: groupRect.left, gr: groupRect.right,
-            x, y, width: nodeRect.width, height: nodeRect.height,
-            t1:y - 20 < groupRect.top,
-            t2:y + nodeRect.height + 20 > groupRect.bottom,
-            t3:x - 20 < groupRect.left,
-            t4:x + nodeRect.width + 20 > groupRect.right,
-        })
-        const outside = (
-            y - 20 < groupRect.top ||
-            y + nodeRect.height + 20 > groupRect.bottom ||
-            x - 20 < groupRect.left ||
-            x + nodeRect.width + 20 > groupRect.right
-        )
+        const { width, height } = el.getBoundingClientRect();
+        const t1 = y < this.y;
+        const t2 = y + height + 60 > this.y + this.el.clientHeight;
+        const t3 = x < this.x;
+        const t4 = x + width + 70 > this.x + this.el.clientWidth;
+        const outside = (t1 || t2 || t3 || t4)
         return !outside;
     }
 
     updateNodesVisibility() {
         if (this.nodes.length > 0) {
+            
             for (let index = 0; index < this.nodes.length; index++) {
                 const element = this.nodes[index];
                 const nodeView = (this.editor.view.nodes.get(element)!);
                 nodeView.el.style.display = this.minimized ? 'none' : 'block';
-
+                if (index > 0 && this.minimized) {
+                    nodeView.translate(this.nodes[0].position[0] + 130,this.nodes[0].position[1])
+                } 
                 const firstOrLast = index === 0 || index === this.nodes.length - 1;
                 if (this.minimized)
                     nodeView.setCustomClass(firstOrLast ? "sideGrouped" : "regularGrouped");
                 else
                     nodeView.setCustomClass("");
-                if (!(firstOrLast)) {
-                    element.getConnections().forEach(con => {
-                        this.editor.view.connections.get(con)!.el.style.display = this.minimized ? "none" : "block";
-                    })
-                }
+                element.getConnections().forEach(con => {
+                    const conView = (this.editor.view.connections.get(con)!);
+                    if (!(firstOrLast)) {
+                        conView.el.style.display = this.minimized ? "none" : "block";
+                    }
+                    conView.update();
+                })
             }
-        this.update()
+            this.update()
         }
     }
 
     update() {
-        const bbox = nodesBBox(this.editor, this.nodes, 10);
-        const x = bbox.left;
-        const y = bbox.top;
+        const bbox = nodesBBox(this.editor, this.nodes, 30);
+        this.x = bbox.left;
+        this.y = bbox.top;
         const scale = 1.0;
-        this.el.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
-        this.el.style.width = bbox.width + 'px';
+        this.el.style.transform = `translate(${this.x}px, ${this.y}px) scale(${scale})`;
+        this.el.style.width = (this.minimized ? 160 : bbox.width) + 'px';
         this.el.style.backgroundColor = 'green'
-        this.el.style.height = bbox.height + 'px';
+        this.el.style.height = (this.minimized ? 160 : bbox.height) + 'px';
 
     }
 
 
     onStart = (_e: PointerEvent) => {
         this.dragStart = [0, 0];
+        this.dragging = true;
+    }
+
+    onDrag = (_e: PointerEvent) => {
+        this.dragging = false;
     }
 
     onTranslate = (x: number, y: number, e: PointerEvent) => {
@@ -205,7 +216,11 @@ export class NodeEditor extends Context<EventsTypes> {
         }
     }
 
-
+    removeNodeFromGroup(node: Node) {
+        if (node.data.group) {
+            this.groups[node.data.group as string].removeNode(node);
+        }
+    }
 
     removeNode(node: Node) {
         if (!this.trigger('noderemove', node)) return;
