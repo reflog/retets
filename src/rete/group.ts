@@ -5,6 +5,10 @@ import { NodeEditor } from './editor'
 const min = (arr: number[]) => arr.length === 0 ? 0 : Math.min(...arr);
 const max = (arr: number[]) => arr.length === 0 ? 0 : Math.max(...arr);
 
+const MINIMIZED_GROUP_WIDTH = 160;
+const MINIMIZED_GROUP_HEIGHT = 160;
+
+
 type Rect = {
     left: number;
     right: number;
@@ -54,20 +58,16 @@ export class NodeGroup {
     private y = 0;
     private _dragging = false;
     private _layouting = false;
+    dragHandler: Drag;
 
     constructor(private editor: NodeEditor, public name: string, public nodes: Node[] = [], public minimized = false) {
         const groupElement = document.createElement('div');
         groupElement.id = `group-${name}`;
-        groupElement.style.position = 'absolute';
-        groupElement.style.zIndex = '-1';
-        (groupElement as any).dragHandler = new Drag(groupElement, this.onTranslate, this.onStart, this.onDrag);
+        groupElement.classList.add("groupElement");
+        this.dragHandler = new Drag(groupElement, this.onTranslate, this.onStart, this.onDrag);
         const groupMinimizeElement = document.createElement('div');
         groupMinimizeElement.id = `group-${name}-min`;
-        groupMinimizeElement.style.position = 'absolute';
-        groupMinimizeElement.style.zIndex = '-1';
-        groupMinimizeElement.style.backgroundColor = 'red';
-        groupMinimizeElement.style.width = "30px";
-        groupMinimizeElement.style.height = "30px";
+        groupMinimizeElement.classList.add("groupMinimizeElement")
         groupMinimizeElement.addEventListener('pointerdown', this.toggleMinimize);
         this.editor.view.container.children[0].appendChild(groupElement)
         groupElement.appendChild(groupMinimizeElement)
@@ -89,6 +89,10 @@ export class NodeGroup {
         }
         this.updateNodesVisibility();
         this.editor.trigger('process');
+    }
+
+    bbox() {
+        return nodesBBox(this.editor, this.nodes, 30)
     }
 
     removeNode(n: Node) {
@@ -133,7 +137,7 @@ export class NodeGroup {
                     if (!(firstOrLast)) {
                         conView.el.style.display = this.minimized ? "none" : "block";
                     }
-                        conView.el.style.marginLeft = index === 0 && this.minimized ? "-30px" : ""
+                    conView.el.style.marginLeft = index === 0 && this.minimized ? "-30px" : ""
                     conView.update();
                 })
             }
@@ -143,14 +147,14 @@ export class NodeGroup {
     }
 
     update() {
-        const bbox = nodesBBox(this.editor, this.nodes, 30);
+        const bbox = this.bbox();
         this.x = bbox.left;
         this.y = bbox.top;
         const scale = 1.0;
         this.el.style.transform = `translate(${this.x}px, ${this.y}px) scale(${scale})`;
-        this.el.style.width = (this.minimized ? 160 : bbox.width) + 'px';
+        this.el.style.width = (this.minimized ? MINIMIZED_GROUP_WIDTH : bbox.width) + 'px';
         this.el.style.backgroundColor = 'green'
-        this.el.style.height = (this.minimized ? 160 : bbox.height) + 'px';
+        this.el.style.height = (this.minimized ? MINIMIZED_GROUP_HEIGHT : bbox.height) + 'px';
 
     }
 

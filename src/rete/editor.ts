@@ -10,7 +10,7 @@ import { Selected } from './selected';
 import { Validator } from './core/validator';
 import { listenWindow } from './view/utils';
 import { EditorEvents, EventsTypes } from './events';
-import {NodeGroup} from './group';
+import { NodeGroup } from './group';
 
 export class NodeEditor extends Context<EventsTypes> {
     groups: { [key: string]: NodeGroup } = {};
@@ -54,12 +54,25 @@ export class NodeEditor extends Context<EventsTypes> {
         this.trigger('nodecreated', node);
         if (node.data.group) {
             const group = (node.data.group as string);
-            if (!this.groups[group]) {
-                this.groups[group] = new NodeGroup(this, group);
-            }
-            this.groups[group].nodes.push(node);
-            this.groups[group].update()
+            this.addNodeToGroup(node, group)
         }
+    }
+
+    removeGroup(group: string) {
+        if (this.groups[group]) {
+            this.groups[group].nodes.forEach(n => this.groups[group].removeNode(n));
+            delete this.groups[group];
+        }
+    }
+
+    addNodeToGroup(node: Node, group: string) {
+        node.data.group = group;
+        if (!this.groups[group]) {
+            this.groups[group] = new NodeGroup(this, group);
+        }
+        this.groups[group].nodes.push(node);
+        this.groups[group].update()
+
     }
 
     removeNodeFromGroup(node: Node) {

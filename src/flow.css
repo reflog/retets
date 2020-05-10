@@ -66,3 +66,17 @@ input {
 .node.regularGrouped {
   display: none;
 }
+
+
+.groupElement {
+  position: absolute;
+  z-index: -1;
+}
+
+.groupMinimizeElement {
+  position: absolute;
+  z-index: -1;
+  background-color: red;
+  width: 30px;
+  height: 30px;
+}
