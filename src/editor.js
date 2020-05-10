@@ -6,7 +6,7 @@ import AreaPlugin from "rete-area-plugin";
 import HistoryPlugin from "rete-history-plugin";
 import {g} from "./plugin/groupComponents.js";
 import ConnectionPlugin from './connection';
- 
+import jsonData from "./test.json" 
 
 let numSocket = new Socket("Number Value");
 
@@ -59,11 +59,7 @@ export async function createFlowEditor() {
         searchBar: false,
         items: {
             "group": () => {
-                editor.trigger('addcomment', ({ type: 'frame', text:"open", nodes:editor.selected.list }))
-                // console.log(editor.selected.list);
-                // editor.selected.list.forEach(s => s.data.group = `grp-${grpIdx}`);
-                // grpIdx++;
-                // editor.trigger("nodeselected")
+               console.log(editor.toJSON())
             }
         },
         allocate() {
@@ -82,26 +78,27 @@ export async function createFlowEditor() {
     engine.register(g);
     editor.on("multiselectnode", (args) => args.accumulate = args.e.ctrlKey || args.e.metaKey);
 
-    for (let i = 0; i < 10; i++) {
-        let add = await c.createNode({ "group": i > 0 && i < 5 ? "group1" : null });
-        if (add) {
-            add.title = "n:" + i;
-            add.position = [i * 150, 240];
-            if (i > 0 && i < 5) {
-                add.position[1] += 190;
-            }
-            editor.addNode(add);
-        }
-        if (i > 0) {
-            editor.connect(editor.nodes[i-1].outputs.get("num"), editor.nodes[i].inputs.get("num1"))
+    // for (let i = 0; i < 10; i++) {
+    //     let add = await c.createNode({ "group": i > 0 && i < 5 ? "group1" : null });
+    //     if (add) {
+    //         add.title = "n:" + i;
+    //         add.position = [i * 150, 240];
+    //         if (i > 0 && i < 5) {
+    //             add.position[1] += 190;
+    //         }
+    //         editor.addNode(add);
+    //     }
+    //     if (i > 0) {
+    //         editor.connect(editor.nodes[i-1].outputs.get("num"), editor.nodes[i].inputs.get("num1"))
 
-        }
-        // if (i % 2 === 0) {
-        //     let add = await g.createNode({"group": i % 2 === 0 ? "group1" : null});
-        //     add.position = [Math.random() * 500, Math.random() * 240];
-        //     editor.addNode(add);
-        // }
-    }
+    //     }
+    //     // if (i % 2 === 0) {
+    //     //     let add = await g.createNode({"group": i % 2 === 0 ? "group1" : null});
+    //     //     add.position = [Math.random() * 500, Math.random() * 240];
+    //     //     editor.addNode(add);
+    //     // }
+    // }
+    editor.fromJSON(jsonData)
     editor.view.resize();
     AreaPlugin.zoomAt(editor);
     editor.trigger("process");

@@ -34,11 +34,13 @@ export class ConnectionView extends Emitter<EventsTypes> {
         return [x1, y1, x2, y2];
     }
 
-    update() {
+    update(points = this.getPoints()) {
+        if (this.outputNode.node.id==2)
+        console.log("con upd", points)
         this.trigger('updateconnection', { 
             el: this.el, 
             connection: this.connection, 
-            points: this.getPoints()
+            points
         });
     }
 }
