@@ -58,8 +58,11 @@ export async function createFlowEditor() {
     editor.use(ContextMenuPlugin, {
         searchBar: false,
         items: {
-            "group": () => {
+            "dump": () => {
                console.log(editor.toJSON())
+            },
+            "delete group": () => {
+                editor.removeGroup("group1");
             }
         },
         allocate() {

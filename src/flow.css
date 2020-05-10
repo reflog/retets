@@ -70,6 +70,7 @@ input {
 
 .groupElement {
   position: absolute;
+  background-color: green;
   z-index: -1;
 }
 

@@ -60,7 +60,7 @@ export class NodeEditor extends Context<EventsTypes> {
 
     removeGroup(group: string) {
         if (this.groups[group]) {
-            this.groups[group].nodes.forEach(n => this.groups[group].removeNode(n));
+            this.groups[group].destroy();
             delete this.groups[group];
         }
     }

@@ -53,25 +53,25 @@ export function containsRect(r1: Rect, r2: Rect) {
 
 export class NodeGroup {
     private _dragStart = [0, 0];
-    private el: HTMLElement;
+    private groupElement: HTMLElement;
     private x = 0;
     private y = 0;
     private _dragging = false;
     private _layouting = false;
     dragHandler: Drag;
+    groupMinimizeElement: HTMLDivElement;
 
     constructor(private editor: NodeEditor, public name: string, public nodes: Node[] = [], public minimized = false) {
-        const groupElement = document.createElement('div');
-        groupElement.id = `group-${name}`;
-        groupElement.classList.add("groupElement");
-        this.dragHandler = new Drag(groupElement, this.onTranslate, this.onStart, this.onDrag);
-        const groupMinimizeElement = document.createElement('div');
-        groupMinimizeElement.id = `group-${name}-min`;
-        groupMinimizeElement.classList.add("groupMinimizeElement")
-        groupMinimizeElement.addEventListener('pointerdown', this.toggleMinimize);
-        this.editor.view.container.children[0].appendChild(groupElement)
-        groupElement.appendChild(groupMinimizeElement)
-        this.el = groupElement;
+        this.groupElement = document.createElement('div');
+        this.groupElement.id = `group-${name}`;
+        this.groupElement.classList.add("groupElement");
+        this.dragHandler = new Drag(this.groupElement, this.onTranslate, this.onStart, this.onDrag);
+        this.groupMinimizeElement = document.createElement('div');
+        this.groupMinimizeElement.id = `group-${name}-min`;
+        this.groupMinimizeElement.classList.add("groupMinimizeElement")
+        this.groupMinimizeElement.addEventListener('pointerdown', this.toggleMinimize);
+        this.editor.view.container.children[0].appendChild(this.groupElement)
+        this.groupElement.appendChild(this.groupMinimizeElement)
     }
 
     toggleMinimize = () => {
@@ -106,9 +106,9 @@ export class NodeGroup {
         const el = (this.editor.view.nodes.get(node)!).el;
         const { width, height } = el.getBoundingClientRect();
         const t1 = y < this.y;
-        const t2 = y + height * this.editor.view.area.transform.k > this.y + this.el.clientHeight;
+        const t2 = y + height * this.editor.view.area.transform.k > this.y + this.groupElement.clientHeight;
         const t3 = x < this.x;
-        const t4 = x + width * this.editor.view.area.transform.k > this.x + this.el.clientWidth;
+        const t4 = x + width * this.editor.view.area.transform.k > this.x + this.groupElement.clientWidth;
         const outside = (t1 || t2 || t3 || t4)
         return !outside;
     }
@@ -151,13 +151,19 @@ export class NodeGroup {
         this.x = bbox.left;
         this.y = bbox.top;
         const scale = 1.0;
-        this.el.style.transform = `translate(${this.x}px, ${this.y}px) scale(${scale})`;
-        this.el.style.width = (this.minimized ? MINIMIZED_GROUP_WIDTH : bbox.width) + 'px';
-        this.el.style.backgroundColor = 'green'
-        this.el.style.height = (this.minimized ? MINIMIZED_GROUP_HEIGHT : bbox.height) + 'px';
-
+        this.groupElement.style.transform = `translate(${this.x}px, ${this.y}px) scale(${scale})`;
+        this.groupElement.style.width = (this.minimized ? MINIMIZED_GROUP_WIDTH : bbox.width) + 'px';
+        this.groupElement.style.height = (this.minimized ? MINIMIZED_GROUP_HEIGHT : bbox.height) + 'px';
     }
 
+    destroy() {
+        this.nodes.forEach(n => n.data.group = undefined);
+        this.nodes = [];
+        this.update();
+        this.dragHandler.destroy();
+        this.groupMinimizeElement.remove();
+        this.groupElement.remove();
+    }
 
     onStart = () => {
         this._dragStart = [0, 0];
