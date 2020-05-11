@@ -31,6 +31,36 @@
       ],
       "name": "add"
     },
+    "133": {
+      "id": 133,
+      "data": {
+        "group": null
+      },
+      "inputs": {
+        "num1": {
+          "connections": []
+        },
+        "num2": {
+          "connections": []
+        }
+      },
+      "outputs": {
+        "num": {
+          "connections": [
+            {
+              "node": 3,
+              "input": "num2",
+              "data": {}
+            }
+          ]
+        }
+      },
+      "position": [
+        0,
+        240
+      ],
+      "name": "add"
+    },
     "2": {
       "id": 2,
       "data": {
@@ -83,7 +113,13 @@
           ]
         },
         "num2": {
-          "connections": []
+          "connections": [
+            {
+              "node": 1,
+              "output": "num",
+              "data": {}
+            }
+          ]
         }
       },
       "outputs": {

@@ -1,6 +1,7 @@
 import { Drag } from './view/drag';
 import { Node } from './node';
 import { NodeEditor } from './editor'
+import { Connection } from './connection';
 
 const min = (arr: number[]) => arr.length === 0 ? 0 : Math.min(...arr);
 const max = (arr: number[]) => arr.length === 0 ? 0 : Math.max(...arr);
@@ -60,11 +61,12 @@ export class NodeGroup {
     private _layouting = false;
     dragHandler: Drag;
     groupMinimizeElement: HTMLDivElement;
-
+    sockets = new Map<HTMLElement, Node>();
+    connections = new Map<Connection, HTMLElement>();
     constructor(private editor: NodeEditor, public name: string, public nodes: Node[] = [], public minimized = false) {
         this.groupElement = document.createElement('div');
         this.groupElement.id = `group-${name}`;
-        this.groupElement.classList.add("groupElement");
+        this.groupElement.classList.add("groupElement", "groupMaximized");
         this.dragHandler = new Drag(this.groupElement, this.onTranslate, this.onStart, this.onDrag);
         this.groupMinimizeElement = document.createElement('div');
         this.groupMinimizeElement.id = `group-${name}-min`;
@@ -76,7 +78,9 @@ export class NodeGroup {
 
     toggleMinimize = () => {
         this.minimized = !this.minimized;
+        this.groupElement.classList.remove("groupMaximized");
         if (!this.minimized) {
+            this.groupElement.classList.add("groupMaximized");
             this._layouting = true;
             //TODO: replace this with auto arrange. Right now - just stupid horizontal layout
             for (let index = 0; index < this.nodes.length; index++) {
@@ -84,6 +88,11 @@ export class NodeGroup {
                 const nodeView = (this.editor.view.nodes.get(n)!);
 
                 nodeView.translate(this.nodes[0].position[0] + 130 * index, this.nodes[0].position[1])
+            }
+            for (let con of this.connections.keys()) {
+                const conView = this.editor.view.connections.get(con)!;
+                conView.pointOverride = undefined;
+                conView.update();
             }
             this._layouting = false;
         }
@@ -101,6 +110,46 @@ export class NodeGroup {
         this.update();
     }
 
+    destroySockets() {
+        for (let ve of this.sockets.keys()) {
+            ve.remove();
+        }
+        this.sockets.clear();
+        this.connections.clear();
+    }
+    rebuildSockets() {
+        this.destroySockets();
+        let inputCount = 0;
+        let outputCount = 0;
+        this.nodes.forEach(node => {
+            node.getConnections().forEach(nc => {
+                if (nc.output && nc.output.node && this.nodes.indexOf(nc.output.node!) === -1) {
+                    // input of this node comes from outside of the group. add input socket
+                    inputCount++;
+                    const socket = document.createElement('div');
+                    this.groupElement.appendChild(socket)
+                    this.sockets.set(socket, node);
+                    socket.id = `group-${this.name}-socket-inp-${node.id}-${inputCount}`;
+                    socket.classList.add("groupMinimizedSocket")
+                    socket.style.transform = `translate(0px, ${30 + inputCount * 40}px)`;
+                    this.connections.set(nc, socket);
+                }
+                if (nc.input && nc.input.node && this.nodes.indexOf(nc.input.node!) === -1) {
+                    // output of this node goes outside of the group. add output socket
+                    outputCount++;
+                    const socket = document.createElement('div');
+                    this.groupElement.appendChild(socket)
+                    this.sockets.set(socket, node);
+                    socket.id = `group-${this.name}-socket-out-${node.id}-${outputCount}`;
+                    socket.classList.add("groupMinimizedSocket")
+                    socket.classList.add("groupMinimizedSocketOutput")
+                    socket.style.transform = `translate(130px, ${30 + outputCount * 40}px)`;
+                    this.connections.set(nc, socket);
+                }
+            })
+        });
+    }
+
     canTranslateNode(node: Node, x: number, y: number): boolean {
         if (this._dragging || this._layouting) return true;
         const el = (this.editor.view.nodes.get(node)!).el;
@@ -113,37 +162,37 @@ export class NodeGroup {
         return !outside;
     }
 
+    updateConnectionViews() {
+        if (!this.minimized) return;
+        this.connections.forEach((socketElement, connection) => {
+
+            const conView = (this.editor.view.connections.get(connection)!);
+            const isInput = connection.input.node ? this.nodes.includes(connection.input.node) : false;
+            const points = conView.getPoints();
+            let idx = isInput ? 2 : 0;
+            const rect = socketElement.getBoundingClientRect();
+            points[idx] = rect.x - MINIMIZED_GROUP_WIDTH / 2;
+            points[idx + 1] = rect.y;
+            conView.pointOverride = points
+
+            conView.update();
+        });
+    }
+
     updateNodesVisibility() {
-        this._layouting = true;
-        if (this.nodes.length > 0) {
-
-            for (let index = 0; index < this.nodes.length; index++) {
-                const element = this.nodes[index];
-                const nodeView = (this.editor.view.nodes.get(element)!);
-                nodeView.el.style.display = this.minimized ? 'none' : 'block';
-                if (this.minimized) {
-                    if (index !== 0) { // stack all nodes at the same location
-                        nodeView.translate(this.nodes[0].position[0] + 130, this.nodes[0].position[1])
-                    }
+        for (let index = 0; index < this.nodes.length; index++) {
+            const element = this.nodes[index];
+            const nodeView = (this.editor.view.nodes.get(element)!);
+            nodeView.el.style.display = this.minimized ? 'none' : 'block';
+            element.getConnections().forEach(con => {
+                const conView = (this.editor.view.connections.get(con)!);
+                // if this is an 'inter-group' connection - hide it
+                if (!this.connections.has(con)) {
+                    conView.el.style.display = this.minimized ? "none" : "block";
                 }
-                const firstOrLast = index === 0 || index === this.nodes.length - 1;
-                if (this.minimized)
-                    nodeView.setCustomClass(firstOrLast ? "sideGrouped" : "regularGrouped");
-                else
-                    nodeView.setCustomClass("");
-                element.getConnections().forEach(con => {
-                    const conView = (this.editor.view.connections.get(con)!);
-
-                    if (!(firstOrLast)) {
-                        conView.el.style.display = this.minimized ? "none" : "block";
-                    }
-                    conView.el.style.marginLeft = index === 0 && this.minimized ? "-30px" : ""
-                    conView.update();
-                })
-            }
-            this.update()
+            })
         }
-        this._layouting = false;
+        this.update()
     }
 
     update() {
@@ -154,6 +203,7 @@ export class NodeGroup {
         this.groupElement.style.transform = `translate(${this.x}px, ${this.y}px) scale(${scale})`;
         this.groupElement.style.width = (this.minimized ? MINIMIZED_GROUP_WIDTH : bbox.width) + 'px';
         this.groupElement.style.height = (this.minimized ? MINIMIZED_GROUP_HEIGHT : bbox.height) + 'px';
+        this.updateConnectionViews();
     }
 
     destroy() {
@@ -163,6 +213,7 @@ export class NodeGroup {
         this.dragHandler.destroy();
         this.groupMinimizeElement.remove();
         this.groupElement.remove();
+        this.destroySockets();
     }
 
     onStart = () => {
@@ -184,5 +235,9 @@ export class NodeGroup {
         this.update();
     }
 
+    addNode(node: Node) {
+        this.nodes.push(node);
+        this.update()
+    }
 
 }

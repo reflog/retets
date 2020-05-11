@@ -81,3 +81,25 @@ input {
   width: 30px;
   height: 30px;
 }
+
+.groupMinimizedSocket{
+  position: absolute;
+  user-select: none;
+  width: 20px !important;
+  max-width: 20px;
+  display: inline-block;
+  height: 20px !important;
+  background: #96b38a !important;
+  cursor: pointer;
+  border: 1px solid white;
+  border-radius: 12px;
+  margin: 6px;
+  z-index: 2;
+}
+
+.groupMinimizedSocketOutput{
+}
+
+.groupMaximized > .groupMinimizedSocket{
+  display: none;
+}

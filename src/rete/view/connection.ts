@@ -9,6 +9,7 @@ export class ConnectionView extends Emitter<EventsTypes> {
     inputNode: NodeView;
     outputNode: NodeView;
     el: HTMLElement;
+    pointOverride?: number[] = undefined;
 
     constructor(connection: Connection, inputNode: NodeView, outputNode: NodeView, emitter: Emitter<EventsTypes>) {
         super(emitter);
@@ -34,13 +35,11 @@ export class ConnectionView extends Emitter<EventsTypes> {
         return [x1, y1, x2, y2];
     }
 
-    update(points = this.getPoints()) {
-        if (this.outputNode.node.id==2)
-        console.log("con upd", points)
+    update() {
         this.trigger('updateconnection', { 
             el: this.el, 
             connection: this.connection, 
-            points
+            points: this.pointOverride || this.getPoints()
         });
     }
 }

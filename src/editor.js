@@ -101,9 +101,13 @@ export async function createFlowEditor() {
     //     //     editor.addNode(add);
     //     // }
     // }
-    editor.fromJSON(jsonData)
+    await editor.fromJSON(jsonData)
     editor.view.resize();
     AreaPlugin.zoomAt(editor);
     editor.trigger("process");
     editor.trigger("nodeselected")
+    editor.nodes.forEach(n => n.title = "n: " + n.id)
+    console.log("---",editor.nodes)
+        editor.trigger("process");
+
 }

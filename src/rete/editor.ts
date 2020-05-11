@@ -36,6 +36,8 @@ export class NodeEditor extends Context<EventsTypes> {
             if (node.data.group) {
                 return this.groups[node.data.group as string].canTranslateNode(node, x, y);
             }
+            // refresh connections on groups
+            Object.values(this.groups).forEach(group => group.updateConnectionViews());
             return true
         });
 
@@ -70,9 +72,7 @@ export class NodeEditor extends Context<EventsTypes> {
         if (!this.groups[group]) {
             this.groups[group] = new NodeGroup(this, group);
         }
-        this.groups[group].nodes.push(node);
-        this.groups[group].update()
-
+        this.groups[group].addNode(node);
     }
 
     removeNodeFromGroup(node: Node) {
@@ -100,8 +100,13 @@ export class NodeEditor extends Context<EventsTypes> {
 
             connection.data = data;
             this.view.addConnection(connection);
-
             this.trigger('connectioncreated', connection);
+            if (connection.input.node && connection.input.node.data.group) {
+                this.groups[connection.input.node.data.group as string].rebuildSockets();
+            }
+            if (connection.output.node && connection.output.node.data.group) {
+                this.groups[connection.output.node.data.group as string].rebuildSockets();
+            }
         } catch (e) {
             this.trigger('warn', e)
         }
@@ -114,6 +119,12 @@ export class NodeEditor extends Context<EventsTypes> {
         connection.remove();
 
         this.trigger('connectionremoved', connection);
+            if (connection.input.node && connection.input.node.data.group) {
+                this.groups[connection.input.node.data.group as string].rebuildSockets();
+            }
+            if (connection.output.node && connection.output.node.data.group) {
+                this.groups[connection.output.node.data.group as string].rebuildSockets();
+            }
     }
 
     selectNode(node: Node, accumulate = false) {
