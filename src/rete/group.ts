@@ -131,7 +131,7 @@ export class NodeGroup {
                     this.sockets.set(socket, node);
                     socket.id = `group-${this.name}-socket-inp-${node.id}-${inputCount}`;
                     socket.classList.add("groupMinimizedSocket")
-                    socket.style.transform = `translate(0px, ${30 + inputCount * 40}px)`;
+                    socket.style.transform = `translate(-15px, ${30 + inputCount * 40}px)`;
                     this.connections.set(nc, socket);
                 }
                 if (nc.input && nc.input.node && this.nodes.indexOf(nc.input.node!) === -1) {
@@ -143,7 +143,7 @@ export class NodeGroup {
                     socket.id = `group-${this.name}-socket-out-${node.id}-${outputCount}`;
                     socket.classList.add("groupMinimizedSocket")
                     socket.classList.add("groupMinimizedSocketOutput")
-                    socket.style.transform = `translate(130px, ${30 + outputCount * 40}px)`;
+                    socket.style.transform = `translate(145px, ${30 + outputCount * 40}px)`;
                     this.connections.set(nc, socket);
                 }
             })
@@ -164,15 +164,17 @@ export class NodeGroup {
 
     updateConnectionViews() {
         if (!this.minimized) return;
+                let bb  = this.bbox();
+
         this.connections.forEach((socketElement, connection) => {
 
             const conView = (this.editor.view.connections.get(connection)!);
             const isInput = connection.input.node ? this.nodes.includes(connection.input.node) : false;
             const points = conView.getPoints();
             let idx = isInput ? 2 : 0;
-            const rect = socketElement.getBoundingClientRect();
-            points[idx] = rect.x - MINIMIZED_GROUP_WIDTH / 2;
-            points[idx + 1] = rect.y;
+            const matrix = new WebKitCSSMatrix(socketElement.style.webkitTransform);
+            points[idx] = bb.left+matrix.m41 + socketElement.clientWidth/2;
+            points[idx + 1] = bb.top +matrix.m42 + socketElement.clientWidth/2;
             conView.pointOverride = points
 
             conView.update();
