@@ -22,9 +22,12 @@ export class NodeEditor extends Context<EventsTypes> {
         super(id, new EditorEvents());
 
         this.view = new EditorView(container, this.components, this);
+        this.bind('group_title_edit');
+        this.bind('group_delete');
 
         this.on('destroy', listenWindow('keydown', e => this.trigger('keydown', e)));
         this.on('destroy', listenWindow('keyup', e => this.trigger('keyup', e)));
+        this.on('group_delete', (name) => this.removeGroup(name));
 
         this.on('selectnode', ({ node, accumulate }) => this.selectNode(node, accumulate));
         this.on('nodeselected', () => this.selected.each(n => {

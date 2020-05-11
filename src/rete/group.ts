@@ -42,7 +42,6 @@ export function nodesBBox(editor: NodeEditor, nodes: Node[], margin: number): Re
     };
 }
 
-
 export function containsRect(r1: Rect, r2: Rect) {
     return (
         r2.left > r1.left &&
@@ -60,24 +59,56 @@ export class NodeGroup {
     private _dragging = false;
     private _layouting = false;
     dragHandler: Drag;
-    groupMinimizeElement: HTMLDivElement;
     sockets = new Map<HTMLElement, Node>();
     connections = new Map<Connection, HTMLElement>();
+    groupTitleElement: HTMLSpanElement;
+    title = "Group";
+
     constructor(private editor: NodeEditor, public name: string, public nodes: Node[] = [], public minimized = false) {
         this.groupElement = document.createElement('div');
         this.groupElement.id = `group-${name}`;
         this.groupElement.classList.add("groupElement", "groupMaximized");
-        this.dragHandler = new Drag(this.groupElement, this.onTranslate, this.onStart, this.onDrag);
-        this.groupMinimizeElement = document.createElement('div');
-        this.groupMinimizeElement.id = `group-${name}-min`;
-        this.groupMinimizeElement.classList.add("groupMinimizeElement")
-        this.groupMinimizeElement.addEventListener('pointerdown', this.toggleMinimize);
         this.editor.view.container.children[0].appendChild(this.groupElement)
-        this.groupElement.appendChild(this.groupMinimizeElement)
+        this.dragHandler = new Drag(this.groupElement, this.onTranslate, this.onStart, this.onDrag);
+
+        const groupMinimizeElement = document.createElement('div');
+        groupMinimizeElement.id = `group-${name}-min`;
+        groupMinimizeElement.classList.add("groupMinimizeElement")
+        groupMinimizeElement.addEventListener('pointerdown', this.toggleMinimize);
+
+        const groupRenameElement = document.createElement('div');
+        groupRenameElement.id = `group-${name}-ren`;
+        groupRenameElement.classList.add("groupRenameElement")
+        groupRenameElement.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            editor.trigger("group_title_edit", this);
+        });
+
+        const groupDeleteElement = document.createElement('div');
+        groupDeleteElement.id = `group-${name}-del`;
+        groupDeleteElement.classList.add("groupDeleteElement")
+        groupDeleteElement.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            editor.trigger("group_delete", this.name);
+        });
+        this.groupTitleElement = document.createElement('span');
+        this.groupTitleElement.id = `group-${name}-title`;
+        this.groupTitleElement.classList.add("groupTitleElement");
+        this.groupTitleElement.textContent = this.title;
+
+        this.groupElement.appendChild(groupRenameElement)
+        this.groupElement.appendChild(groupDeleteElement)
+        this.groupElement.appendChild(groupMinimizeElement)
+        this.groupElement.appendChild(this.groupTitleElement)
     }
 
-    toggleMinimize = () => {
-        this.minimized = !this.minimized;
+    setTitle = (t: string) => {
+        this.groupTitleElement.textContent = t;
+        this.title = t;
+    }
+
+    toggleMinimize = (e: PointerEvent) => {
+        e.stopPropagation(); this.minimized = !this.minimized;
         this.groupElement.classList.remove("groupMaximized");
         if (!this.minimized) {
             this.groupElement.classList.add("groupMaximized");
@@ -112,11 +143,12 @@ export class NodeGroup {
 
     destroySockets() {
         for (let ve of this.sockets.keys()) {
-            ve.remove();
+            ve.parentElement?.remove();
         }
         this.sockets.clear();
         this.connections.clear();
     }
+
     rebuildSockets() {
         this.destroySockets();
         let inputCount = 0;
@@ -126,8 +158,15 @@ export class NodeGroup {
                 if (nc.output && nc.output.node && this.nodes.indexOf(nc.output.node!) === -1) {
                     // input of this node comes from outside of the group. add input socket
                     inputCount++;
+                    const socketWrapper = document.createElement('div');
+                    this.groupElement.appendChild(socketWrapper)
                     const socket = document.createElement('div');
-                    this.groupElement.appendChild(socket)
+                    socketWrapper.appendChild(socket)
+                    const socketTitle = document.createElement('span');
+                    socketTitle.textContent = nc.output.node.name;
+                    socketTitle.classList.add("socketTitleIn")
+                    socketTitle.style.transform = `translate(15px, ${36 + inputCount * 40}px)`;
+                    socketWrapper.appendChild(socketTitle);
                     this.sockets.set(socket, node);
                     socket.id = `group-${this.name}-socket-inp-${node.id}-${inputCount}`;
                     socket.classList.add("groupMinimizedSocket")
@@ -137,8 +176,16 @@ export class NodeGroup {
                 if (nc.input && nc.input.node && this.nodes.indexOf(nc.input.node!) === -1) {
                     // output of this node goes outside of the group. add output socket
                     outputCount++;
+                    const socketWrapper = document.createElement('div');
+                    this.groupElement.appendChild(socketWrapper)
                     const socket = document.createElement('div');
-                    this.groupElement.appendChild(socket)
+                    socketWrapper.appendChild(socket);
+                    const socketTitle = document.createElement('span');
+                    socketTitle.textContent = nc.input.node.name;
+                    socketTitle.classList.add("socketTitleOut")
+                    socketTitle.style.transform = `translate(130px, ${36 + outputCount * 40}px)`;
+
+                    socketWrapper.appendChild(socketTitle);
                     this.sockets.set(socket, node);
                     socket.id = `group-${this.name}-socket-out-${node.id}-${outputCount}`;
                     socket.classList.add("groupMinimizedSocket")
@@ -164,7 +211,7 @@ export class NodeGroup {
 
     updateConnectionViews() {
         if (!this.minimized) return;
-                let bb  = this.bbox();
+        let bb = this.bbox();
 
         this.connections.forEach((socketElement, connection) => {
 
@@ -173,8 +220,8 @@ export class NodeGroup {
             const points = conView.getPoints();
             let idx = isInput ? 2 : 0;
             const matrix = new WebKitCSSMatrix(socketElement.style.webkitTransform);
-            points[idx] = bb.left+matrix.m41 + socketElement.clientWidth/2;
-            points[idx + 1] = bb.top +matrix.m42 + socketElement.clientWidth/2;
+            points[idx] = bb.left + matrix.m41 + socketElement.clientWidth / 2;
+            points[idx + 1] = bb.top + matrix.m42 + socketElement.clientWidth / 2;
             conView.pointOverride = points
 
             conView.update();
@@ -213,7 +260,6 @@ export class NodeGroup {
         this.nodes = [];
         this.update();
         this.dragHandler.destroy();
-        this.groupMinimizeElement.remove();
         this.groupElement.remove();
         this.destroySockets();
     }

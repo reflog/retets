@@ -9,6 +9,7 @@ import { Output } from './output';
 import { Socket } from './socket';
 import { EventsTypes as DefaultEventsTypes, Events } from './core/events';
 import { Mouse, Transform, ZoomSource } from './view/area';
+import { NodeGroup } from './group';
 
 export class EditorEvents extends Events {
 
@@ -134,4 +135,6 @@ export interface EventsTypes extends DefaultEventsTypes {
     export: Data;
     process: void;
     clear: void;
+    group_delete: string;
+    group_title_edit: NodeGroup;
 }

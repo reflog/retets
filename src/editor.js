@@ -106,6 +106,12 @@ export async function createFlowEditor() {
     AreaPlugin.zoomAt(editor);
     editor.trigger("process");
     editor.trigger("nodeselected")
+    editor.on("group_title_edit", (g) => {
+        const answer = prompt("please enter group title", g.title)
+        if (answer) {
+            g.setTitle(answer);
+        }
+    })
     editor.nodes.forEach(n => n.title = "n: " + n.id)
     console.log("---",editor.nodes)
         editor.trigger("process");

@@ -77,12 +77,51 @@ input {
 .groupMaximized {
   z-index: -1;
 }
+
 .groupMinimizeElement {
   position: absolute;
   z-index: -1;
   background-color: red;
   width: 30px;
   height: 30px;
+  right: 10px
+}
+
+.groupRenameElement {
+  position: absolute;
+  z-index: -1;
+  background-color: pink;
+  right: 50px;
+  width: 30px;
+  height: 30px;
+}
+
+.groupDeleteElement {
+  position: absolute;
+  z-index: -1;
+  background-color: purple;
+  right: 90px;
+  width: 30px;
+  height: 30px;
+}
+
+.groupTitleElement {
+  position: absolute;
+  z-index: -1;
+  background-color: #2b5088;
+}
+
+
+.socketTitleIn {
+  position: absolute;
+  z-index: -1;
+  background-color: maroon;
+}
+
+.socketTitleOut {
+  position: absolute;
+  z-index: -1;
+  background-color: magenta;
 }
 
 .groupMinimizedSocket{
@@ -103,6 +142,9 @@ input {
 .groupMinimizedSocketOutput{
 }
 
-.groupMaximized > .groupMinimizedSocket{
+.groupMaximized > div > .groupMinimizedSocket{
+  display: none;
+}
+.groupMaximized > div > span {
   display: none;
 }
