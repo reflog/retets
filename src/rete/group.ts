@@ -165,12 +165,12 @@ export class NodeGroup {
                     const socketTitle = document.createElement('span');
                     socketTitle.textContent = nc.output.node.name;
                     socketTitle.classList.add("socketTitleIn")
-                    socketTitle.style.transform = `translate(15px, ${36 + inputCount * 40}px)`;
+                    socketWrapper.classList.add("socketWrapper")
                     socketWrapper.appendChild(socketTitle);
                     this.sockets.set(socket, node);
                     socket.id = `group-${this.name}-socket-inp-${node.id}-${inputCount}`;
                     socket.classList.add("groupMinimizedSocket")
-                    socket.style.transform = `translate(-15px, ${30 + inputCount * 40}px)`;
+                    socketWrapper.style.transform = `translate(-15px, ${30 + inputCount * 40}px)`;
                     this.connections.set(nc, socket);
                 }
                 if (nc.input && nc.input.node && this.nodes.indexOf(nc.input.node!) === -1) {
@@ -180,17 +180,17 @@ export class NodeGroup {
                     this.groupElement.appendChild(socketWrapper)
                     const socket = document.createElement('div');
                     socketWrapper.appendChild(socket);
+                    socketWrapper.classList.add("socketWrapper", "socketWrapperOut")
                     const socketTitle = document.createElement('span');
                     socketTitle.textContent = nc.input.node.name;
                     socketTitle.classList.add("socketTitleOut")
-                    socketTitle.style.transform = `translate(130px, ${36 + outputCount * 40}px)`;
+                    // socketTitle.style.transform = `translate(130px, ${36 + outputCount * 40}px)`;
 
                     socketWrapper.appendChild(socketTitle);
                     this.sockets.set(socket, node);
                     socket.id = `group-${this.name}-socket-out-${node.id}-${outputCount}`;
-                    socket.classList.add("groupMinimizedSocket")
-                    socket.classList.add("groupMinimizedSocketOutput")
-                    socket.style.transform = `translate(145px, ${30 + outputCount * 40}px)`;
+                    socket.classList.add("groupMinimizedSocket", "groupMinimizedSocketOutput")
+                    socketWrapper.style.transform = `translate(125px, ${30 + outputCount * 40}px)`;
                     this.connections.set(nc, socket);
                 }
             })
@@ -219,7 +219,7 @@ export class NodeGroup {
             const isInput = connection.input.node ? this.nodes.includes(connection.input.node) : false;
             const points = conView.getPoints();
             let idx = isInput ? 2 : 0;
-            const matrix = new WebKitCSSMatrix(socketElement.style.webkitTransform);
+            const matrix = new WebKitCSSMatrix(socketElement.parentElement!.style.webkitTransform);
             points[idx] = bb.left + matrix.m41 + socketElement.clientWidth / 2;
             points[idx + 1] = bb.top + matrix.m42 + socketElement.clientWidth / 2;
             conView.pointOverride = points

@@ -113,19 +113,29 @@ input {
 
 
 .socketTitleIn {
-  position: absolute;
+  /* position: absolute; */
+    user-select: none;
+align-self: center;
   z-index: -1;
   background-color: maroon;
 }
 
 .socketTitleOut {
-  position: absolute;
+  /* position: absolute; */
+    float: left;
+  user-select: none;
+align-self: center;
   z-index: -1;
   background-color: magenta;
 }
-
-.groupMinimizedSocket{
+.socketWrapper{
   position: absolute;
+  display: flex;
+}
+.socketWrapperOut{
+  flex-direction: row-reverse;
+}
+.groupMinimizedSocket{
   user-select: none;
   width: 20px !important;
   max-width: 20px;
